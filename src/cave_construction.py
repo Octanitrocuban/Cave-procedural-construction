@@ -27,6 +27,8 @@ def Show_cave(cave_map, figsize=(8, 8)):
 	"""
 	plt.figure(figsize=figsize)
 	plt.imshow(cave_map, cmap='binary', interpolation='Nearest')
+	plt.colorbar(shrink=0.7, pad=0.01, ticks=[0, 1]).set_ticklabels(
+						['ground', 'wall'])
 	plt.show()
 
 def IsingStep(Map, neighbourhood):
@@ -164,9 +166,9 @@ def IsingCave(Shape, Proportion=0.5, neighbourhood='Moore'):
 		bt = np.copy(Plateau)
 		if i%2 == 0:
 			bt2 = np.copy(Plateau)
-		elif i%3 == 0:
+		if i%3 == 0:
 			bt3 = np.copy(Plateau)
-		elif i%4 == 0:
+		if i%4 == 0:
 			bt4 = np.copy(Plateau)
 
 		Plateau = IsingStep(Plateau, neighbourhood)
