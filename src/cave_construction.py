@@ -497,7 +497,7 @@ def tunnelling(CaveDict):
 	creuse = np.unique(creuse, axis=0)
 	return creuse
 
-def CaveMaker(Shape, filledProp, MinHallSize, MinColumnSize, Neighboor='Moore'):
+def CaveMaker(Shape, fillProp, MinHallSize, MinColumnSize, Neighboor='Moore'):
 	"""
 	Function to create a cave map through a procedural method.
 
@@ -506,7 +506,7 @@ def CaveMaker(Shape, filledProp, MinHallSize, MinColumnSize, Neighboor='Moore'):
 	Shape : int
 		Length of the edge of the square matrix that will become the the cave
 		map.
-	filledProp : float
+	fillProp : float
 		The proportion of cells of the map that randomly take the value 0 at
 		the initialization of the map. It can go from 0 (all the cells will be
 		equal to 1) to 1 (all the cells will be equal to 0). The default is
@@ -548,7 +548,7 @@ def CaveMaker(Shape, filledProp, MinHallSize, MinColumnSize, Neighboor='Moore'):
 
 	"""
 	# Using an Ising model for the original shape
-	Cave = IsingCave(Shape, filledProp, Neighboor).astype(int)
+	Cave = IsingCave(Shape, fillProp, Neighboor).astype(int)
 	# Mapping the structures created
 	NwMap, polygones = Polygonize(Cave)
 	# Removing hall al columns that are smaller than 'MinHallSize' and
