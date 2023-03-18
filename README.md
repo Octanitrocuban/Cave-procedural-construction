@@ -30,7 +30,7 @@ The list of functions and their purpose:
 
 
 Exemples for: CaveMaker(100, 0.55, 101, 6, 'Moore')
+![Exemple picture](Moore.png)
 
-
-Exemples for: CaveMaker(100, 0.55, 101, 6, 'Neumann')
-
+Exemples for: CaveMaker(100, 0.5, 101, 6, 'Neumann')
+![Exemple picture](Neumann.png)
