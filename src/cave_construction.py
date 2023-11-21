@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-@author: Matthieu Nougaret,
-		 PhD student, Volcanics Systems, IPGP
-
 This module contain functions to create a random cave map.
 
 This project is under MIT licence.
-
 """
 import numpy as np
 import matplotlib.pyplot as plt
