@@ -3,6 +3,7 @@
 This module contain functions to create a random cave map.
 
 This project is under MIT licence.
+
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -250,8 +251,11 @@ def polyg_posi_vec_table(array, start_posi):
 	shp = array.shape
 	repre_map = np.copy(array)
 	p = np.copy(start_posi)
+
 	# value at the starting cell which will be targeted for clipping
 	v = repre_map[p[:, 0], p[:, 1]]
+	kernel = np.array([[[-1,  0]], [[ 0, -1]], [[ 0,  1]], [[ 1,  0]]])
+
 	# value that will be usedd to indicate the cells selected as being
 	# part of the current clipped polygon
 	vfil = np.max(array)+1
@@ -259,21 +263,25 @@ def polyg_posi_vec_table(array, start_posi):
 	while stop != True:
 		# stored position are used to fill the cell
 		repre_map[p[:, 0], p[:, 1]] = vfil
+
 		# select neigboor cells
-		p = np.array([[p[:, 0]-1, p[:, 1]  ], [p[:, 0]+1, p[:, 1]   ],
-					  [p[:, 0]  , p[:, 1]-1], [p[:, 0]  , p[:, 1]+1]])
+		p = p+kernel
+		p_shape = p.shape
 
 		# reshape them
-		p = np.concatenate(p, axis=1).T
+		p = np.reshape(p, (p_shape[0]*p_shape[1], 2))
+
 		# to avoid exponentional repetition
 		# to keep only existing cell
 		p = p[(p[:, 0] >= 0)&(p[:, 1] >= 0)&(
-				p[:, 0] < shp[0])&(p[:, 1] < shp[1])]
+			   p[:, 0] < shp[0])&(p[:, 1] < shp[1])]
 
 		# to keep unexplored cell which are part of the clipping polygon
 		p = p[repre_map[p[:, 0], p[:, 1]] == v]
+
 		# to keep all the positions only once
 		p = np.unique(p, axis=0)
+
 		# stop when it can not found any other connected cell with the
 		# starting value i.e. it had clipped the current polygon
 		if len(p) == 0:
