@@ -3,7 +3,6 @@
 This module contain functions to create a random cave map.
 
 This project is under MIT licence.
-
 """
 import numpy as np
 import matplotlib.pyplot as plt
@@ -85,34 +84,35 @@ def ising_step(plate, neighbourhood):
 					 [1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1]])
 
 	"""
-	# Create the next cave map that will be modified
-	next_one = np.ones((plate.shape[0]+2, plate.shape[0]+2))
-	next_one[1:-1, 1:-1] = np.copy(plate)
-	# Create all the possible existing position [[0, 0], [0, 1], ...,
-	# [n-1, n-1]]. n beeing plate.shape[0]
-	place = np.meshgrid(range(plate.shape[0]), range(plate.shape[1]))
-	place = np.array([np.ravel(place[0]), np.ravel(place[1])]).T
+	# ground = 0 ; wall = 1
+	# Create the next cave map
+	resize = np.ones((plate.shape[0]+2, plate.shape[1]+2))
 	if neighbourhood == 'Neumann':
-		kernel = np.array([[[0, 1]], [[1, 0]], [[0, 0]],
-						   [[0, -1]], [[-1, 0]]])
-
-		vlims = [2, 3]
+		resize[:-2, 1:-1] = resize[:-2, 1:-1]+plate
+		resize[1:-1, :-2] = resize[1:-1, :-2]+plate
+		resize[1:-1, 1:-1] = resize[1:-1, 1:-1]+plate
+		resize[1:-1, 2:] = resize[1:-1, 2:]+plate
+		resize[2:, 1:-1] = resize[2:, 1:-1]+plate
+		copy = np.copy(resize[1:-1, 1:-1])
+		copy[copy <= 3] = 0
+		copy[copy >= 4] = 1
 
 	elif neighbourhood == 'Moore':
-		kernel = np.array([[[-1, -1]], [[-1,  0]], [[-1,  1]], [[ 0, -1]],
-						   [[ 0,  0]], [[ 0,  1]], [[ 1, -1]], [[ 1,  0]],
-						   [[ 1,  1]]])
+		resize[3:-3, 3:-3] = 0
+		resize[:-2, :-2] = resize[:-2, :-2]+plate
+		resize[:-2, 1:-1] = resize[:-2, 1:-1]+plate
+		resize[:-2, 2:] = resize[:-2, 2:]+plate
+		resize[1:-1, :-2] = resize[1:-1, :-2]+plate
+		resize[1:-1, 1:-1] = resize[1:-1, 1:-1]+plate
+		resize[1:-1, 2:] = resize[1:-1, 2:]+plate
+		resize[2:, :-2] = resize[2:, :-2]+plate
+		resize[2:, 1:-1] = resize[2:, 1:-1]+plate
+		resize[2:, 2:] = resize[2:, 2:]+plate
+		copy = np.copy(resize[1:-1, 1:-1])
+		copy[copy <= 4] = 0
+		copy[copy >= 4] = 1
 
-		vlims = [4, 4]
-
-	# Trick to use the automatic shape combinaison for the vectorisation of
-	# this function
-	neigh = place+1+kernel
-	compte = np.sum(next_one[neigh[:, :, 0], neigh[:, :, 1]], axis=0)
-	# Application of the rules of the Ising model
-	plate[place[compte > vlims[0], 0], place[compte > vlims[0], 1]] = 1
-	plate[place[compte < vlims[1], 0], place[compte < vlims[1], 1]] = 0
-	return plate
+	return copy
 
 def ising_cave(shape, proportion=0.5, neighbourhood='Moore'):
 	"""
@@ -171,7 +171,8 @@ def ising_cave(shape, proportion=0.5, neighbourhood='Moore'):
 	# Resizing for the ising steps
 	plateau = np.ones((shape, shape), dtype=int)
 	plateau[1:-1, 1:-1] = plat
-	for i in range(len(plateau)**2):
+	n_iter = shape**2
+	for i in range(n_iter):
 		# Trick to make an early stopping
 		bt = np.copy(plateau)
 		if i%2 == 0:
@@ -182,6 +183,10 @@ def ising_cave(shape, proportion=0.5, neighbourhood='Moore'):
 			bt4 = np.copy(plateau)
 
 		plateau = ising_step(plateau, neighbourhood)
+		plateau[0] = 1
+		plateau[-1] = 1
+		plateau[:, 0] = 1
+		plateau[:, -1] = 1
 		if np.sum(bt != plateau) == 0:
 			break
 		elif np.sum(bt2 != plateau) == 0:
@@ -193,7 +198,7 @@ def ising_cave(shape, proportion=0.5, neighbourhood='Moore'):
 
 	return plateau
 
-def polyg_posi_vec_table(array, start_posi):
+def polyg_posi_vec_table(array, shape, start_posi):
 	"""
 	Function to have a representation map to select a polygon on a 2
 	dimensionals numpy.ndarray.
@@ -202,6 +207,8 @@ def polyg_posi_vec_table(array, start_posi):
 	----------
 	array : numpy.ndarray
 		The 2 dimensionals numpy.ndarray to explore.
+	shape : tuple
+		Shape of the array.
 	start_posi : numpy.ndarray
 		Starting position of the exploration. It must have the following shape
 		np.array([[xi, yi]]).
@@ -230,7 +237,7 @@ def polyg_posi_vec_table(array, start_posi):
 					 [1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1],
 					 [1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 					 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
-	In [1] : polyg_posi_vec_table(_, np.array([[4, 4]]))
+	In [1] : polyg_posi_vec_table(_, (15, 15), np.array([[4, 4]]))
 	Out [1] : array([[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 				     [1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1],
 					 [1, 1, 1, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1],
@@ -248,12 +255,15 @@ def polyg_posi_vec_table(array, start_posi):
 					 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
 
 	"""
-	shp = array.shape
 	repre_map = np.copy(array)
 	p = np.copy(start_posi)
 
 	# value at the starting cell which will be targeted for clipping
-	v = repre_map[p[:, 0], p[:, 1]]
+	if p.shape[0] > 1:
+		v = repre_map[p[0, 0], p[0, 1]]
+	else:
+		v = repre_map[p[:, 0], p[:, 1]]
+
 	kernel = np.array([[[-1,  0]], [[ 0, -1]], [[ 0,  1]], [[ 1,  0]]])
 
 	# value that will be usedd to indicate the cells selected as being
@@ -272,9 +282,8 @@ def polyg_posi_vec_table(array, start_posi):
 		p = np.reshape(p, (p_shape[0]*p_shape[1], 2))
 
 		# to avoid exponentional repetition
-		# to keep only existing cell
 		p = p[(p[:, 0] >= 0)&(p[:, 1] >= 0)&(
-			   p[:, 0] < shp[0])&(p[:, 1] < shp[1])]
+			   p[:, 0] < shape[0])&(p[:, 1] < shape[1])]
 
 		# to keep unexplored cell which are part of the clipping polygon
 		p = p[repre_map[p[:, 0], p[:, 1]] == v]
@@ -349,22 +358,36 @@ def polygonize(array):
 			  'p4': {'fill_value': 3, 'size': 14, 'origin_val': 0}}
 
 	"""
-	first_ground = polyg_posi_vec_table(array, np.array([[0, 0]]))
+	# To not recompute shape everytime
+	shp = array.shape
+
+	# Since all bounds are always connected, we can create a starting position
+	# array witch will remove many iterations
+	starter = np.zeros((shp[0]*3, 2), dtype=int)
+	kern_sh = np.arange(shp[0])
+	# first column
+	starter[:shp[0], 0] = kern_sh
+	# first line
+	starter[shp[0]*2:shp[0]*3, 1] = kern_sh
+	# last line
+	starter[-shp[0]:, 1] = kern_sh
+	starter[-shp[0]:, 0] = shp[0]-1
+
+	# Initialization
+	first_ground = polyg_posi_vec_table(array, shp, starter)
 	next_p = np.argwhere(first_ground == array)
-	c = 2
 	while len(next_p) > 0:
 		next_p = np.array([next_p[0]])
-		first_ground = polyg_posi_vec_table(first_ground, next_p)
+		first_ground = polyg_posi_vec_table(first_ground, shp, next_p)
 		# Y == array will return a boolean 2d np.ndarray where the cells
 		# beeing equal to True mean that they were not explore yet by the
 		# polyg_posi_vec_table function.
 		next_p = np.argwhere(first_ground == array)
-		c += 1
 
 	# Create a dictionary to ease on the extraction of the polygons
 	polyg_dic = {}
 	first_ground -= np.min(first_ground)
-	uniq = np.unique(first_ground)
+	uniq = np.arange(np.max(first_ground))
 	for i in range(len(uniq)):
 		key = "p"+str(i+1)
 		polyg_dic[key] = dict(fill_value = uniq[i],
@@ -433,6 +456,7 @@ def get_hall_limits(cave):
 	"""
 	# Mapping the structures
 	new_map, polygones = polygonize(cave)
+
 	# Listing the ground cells that are touching wall cells for each isolated
 	# cave hall
 	cave_pols = {}
@@ -444,6 +468,7 @@ def get_hall_limits(cave):
 			cave_pols[i]['size'] = polygones[i]['size']
 			cave_pols[i]['origin_val'] = polygones[i]['origin_val']
 			centro = np.argwhere(new_map == polygones[i]['fill_value'])
+
 			# There will not be error with calculated position < 0 or >= shape
 			# due to the fact that there aren't cell equall to 0 on the edge
 			# of the matrix
@@ -499,6 +524,7 @@ def tunnelling(cave_dict):
 	"""
 	kernel = np.array([[[-1, 0]], [[ 0,-1]], [[ 0, 0]], [[ 0, 1]], [[ 1, 0]]])
 	keys = list(cave_dict.keys())
+
 	# first calculate the distances matrixs between unconcted halls
 	distances = np.zeros((len(keys), len(keys)-1))
 	link = np.zeros((len(keys), len(keys)-1, 2, 2), dtype=int)
@@ -511,7 +537,7 @@ def tunnelling(cave_dict):
 				cave_2 = cave_dict[keys[i]]['positions']
 				dist = cdist(cave_1, cave_2)
 				p_s = np.argwhere(dist == np.min(dist))[0]
-				lik.append([cave_1[p_s[1]], cave_2[p_s[0]]])
+				lik.append([cave_1[p_s[0]], cave_2[p_s[1]]])
 				dtn.append(np.min(dist))
 
 		distances[n] = dtn
@@ -591,8 +617,10 @@ def cave_maker(shape, fill_prop, min_hall_size, min_column_size,
 	"""
 	# Using an Ising model for the original shape
 	cave = ising_cave(shape, fill_prop, neighboor).astype(int)
+
 	# Mapping the structures created
 	new_map, polygones = polygonize(cave)
+
 	# Removing hall al columns that are smaller than 'min_hall_size' and
 	# 'MinColumnsSize'.
 	sz ='size'
@@ -606,15 +634,19 @@ def cave_maker(shape, fill_prop, min_hall_size, min_column_size,
 			cave[new_map == polygones[i]['fill_value']] = 0
 
 	# Smoothing the new map
-	for i in range(shape):
+	for i in range(max([2, int(shape**0.5)])):
 		cave = ising_step(cave, neighboor)
+		cave[0] = 1
+		cave[-1] = 1
+		cave[:, 0] = 1
+		cave[:, -1] = 1
 
 	# get and store the position of the limits between ground and wall cells
 	cave_pols = get_hall_limits(cave)
 	length = len(cave_pols)
 	if length > 1:
 		for i in range(length):
-			# making a hole between two hall
+			# making a hole between two unconnected hall
 			digging = tunnelling(cave_pols)
 			cave[digging[:, 0], digging[:, 1]] = 0
 			if len(cave_pols) > 2:
